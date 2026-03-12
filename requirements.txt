@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+scikit-learn
+numpy
+pandas
+xgboost
+statsmodels
+langchain
+langgraph
+neo4j
+psycopg2
+shapely

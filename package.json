@@ -1,0 +1,10 @@
+{
+  "name": "roots",
+  "version": "1.0.0",
+  "description": "ROOTS — Responsive Optimization of Urban Infrastructure Through AI",
+  "main": "index.js",
+  "dependencies": {
+    "express": "*",
+    "whatsapp-cloud-api-client": "*"
+  }
+}
