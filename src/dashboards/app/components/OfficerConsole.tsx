@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 type RepairTask = {
   task_id: string;
@@ -12,42 +13,30 @@ type RepairTask = {
   complaint_type: string;
 };
 
-const dummyTasks: RepairTask[] = [
-  {
-    task_id: "T-001",
-    root_cause: "Surface Drainage Blockage",
-    repair_description: "Deploy hydro-jetting to clear storm drains.",
-    estimated_cost_inr: 25000,
-    env_harm_prevented_score: 4839,
-    days_unresolved: 14,
-    affected_population: 1500,
-    complaint_type: "waterlogging"
-  },
-  {
-    task_id: "T-002",
-    root_cause: "Subsurface Drainage Failure",
-    repair_description: "Excavate and replace underground drainage segment.",
-    estimated_cost_inr: 150000,
-    env_harm_prevented_score: 8200,
-    days_unresolved: 5,
-    affected_population: 3000,
-    complaint_type: "pothole"
-  },
-  {
-    task_id: "T-003",
-    root_cause: "Solid Waste Overflow",
-    repair_description: "Emergency waste clearing, fumigation.",
-    estimated_cost_inr: 15000,
-    env_harm_prevented_score: 1200,
-    days_unresolved: 3,
-    affected_population: 800,
-    complaint_type: "garbage"
-  }
-];
-
 export default function OfficerConsole() {
-  const [tasks] = useState<RepairTask[]>(dummyTasks);
+  const [tasks, setTasks] = useState<RepairTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
   const totalBudget = 500000;
+
+  const fetchTasks = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await axios.get('/api/repair-tasks?ward_id=ward78');
+      setTasks(res.data || []);
+    } catch (e) {
+      console.error(e);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
   const handleDispatch = (taskId: string) => {
     console.log(`Dispatched repair team for task: ${taskId}`);
@@ -83,32 +72,47 @@ export default function OfficerConsole() {
       {/* Task List */}
       <div>
         <h3 className="text-xl font-bold mb-4 border-b border-slate-800 pb-2">Top Priority Repairs (ROI Optimized)</h3>
-        <div className="grid gap-4">
-          {tasks.map((task, idx) => (
-            <div key={task.task_id} className="bg-[#0A1118] border border-slate-800 rounded-lg p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-slate-600 transition-colors">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded font-bold">#{idx + 1}</span>
-                  <h4 className="text-lg font-bold text-white">{task.root_cause}</h4>
-                  <span className="text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">
-                    {task.days_unresolved} Days Unresolved
-                  </span>
-                </div>
-                <p className="text-slate-400 text-sm mb-3">{task.repair_description}</p>
-                <div className="flex flex-wrap gap-4 text-sm font-space">
-                  <span className="text-slate-300">Cost: <span className="text-white">₹{task.estimated_cost_inr.toLocaleString()}</span></span>
-                  <span className="text-slate-300">Env Harm Prevented: <span className="text-[#00E5A0]">{task.env_harm_prevented_score}</span></span>
-                </div>
-              </div>
-              <button
-                onClick={() => handleDispatch(task.task_id)}
-                className="bg-[#00E5A0] text-[#050A0E] hover:bg-[#00c98c] px-6 py-2 rounded font-bold transition-colors w-full md:w-auto"
-              >
-                Dispatch Team
-              </button>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+           <div className="animate-pulse space-y-4">
+             {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-800 rounded-lg"></div>)}
+           </div>
+        ) : error ? (
+           <div className="text-center p-6 border border-red-900/50 rounded-lg bg-red-900/10">
+             <p className="text-red-400 mb-4">Failed to load repair tasks.</p>
+             <button onClick={fetchTasks} className="bg-slate-800 text-white px-4 py-2 rounded">Retry</button>
+           </div>
+        ) : tasks.length === 0 ? (
+           <div className="text-center p-6 border border-slate-800 rounded-lg text-slate-500">
+             No pending repair tasks.
+           </div>
+        ) : (
+           <div className="grid gap-4">
+             {tasks.map((task, idx) => (
+               <div key={task.task_id} className="bg-[#0A1118] border border-slate-800 rounded-lg p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-slate-600 transition-colors">
+                 <div className="flex-1">
+                   <div className="flex items-center gap-3 mb-2">
+                     <span className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded font-bold">#{idx + 1}</span>
+                     <h4 className="text-lg font-bold text-white">{task.root_cause}</h4>
+                     <span className="text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">
+                       {task.days_unresolved} Days Unresolved
+                     </span>
+                   </div>
+                   <p className="text-slate-400 text-sm mb-3">{task.repair_description}</p>
+                   <div className="flex flex-wrap gap-4 text-sm font-space">
+                     <span className="text-slate-300">Cost: <span className="text-white">₹{task.estimated_cost_inr.toLocaleString()}</span></span>
+                     <span className="text-slate-300">Env Harm Prevented: <span className="text-[#00E5A0]">{task.env_harm_prevented_score}</span></span>
+                   </div>
+                 </div>
+                 <button
+                   onClick={() => handleDispatch(task.task_id)}
+                   className="bg-[#00E5A0] text-[#050A0E] hover:bg-[#00c98c] px-6 py-2 rounded font-bold transition-colors w-full md:w-auto shrink-0"
+                 >
+                   Dispatch Team
+                 </button>
+               </div>
+             ))}
+           </div>
+        )}
       </div>
     </div>
   );

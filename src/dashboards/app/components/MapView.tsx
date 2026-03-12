@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icons in Leaflet with Next.js
 const createIcon = (colorUrl: string) => {
   return new L.Icon({
     iconUrl: colorUrl,
@@ -20,19 +20,33 @@ const icons = {
   waterlogging: createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'),
   pothole: createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png'),
   garbage: createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png'),
+  damp_wall: createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png'),
+  unclassified: createIcon('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png')
 };
 
-const dummyMarkers = [
-  { id: 1, lat: 28.6562, lng: 77.2140, type: 'waterlogging', severity: 0.9 },
-  { id: 2, lat: 28.6575, lng: 77.2120, type: 'pothole', severity: 0.7 },
-  { id: 3, lat: 28.6580, lng: 77.2160, type: 'garbage', severity: 0.8 },
-];
+type MarkerData = {
+  complaint_id: string;
+  latitude: number;
+  longitude: number;
+  complaint_type: string;
+  severity: number;
+};
 
 export default function MapView() {
   const [isMounted, setIsMounted] = useState(false);
+  const [markers, setMarkers] = useState<MarkerData[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
+    const fetchMarkers = async () => {
+      try {
+        const res = await axios.get('/api/complaints?ward_id=ward78');
+        setMarkers(res.data || []);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchMarkers();
   }, []);
 
   if (!isMounted) return <div className="h-[400px] bg-slate-900 rounded-lg animate-pulse flex items-center justify-center text-slate-500">Loading map...</div>;
@@ -48,18 +62,21 @@ export default function MapView() {
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
-        {dummyMarkers.map((marker) => (
-          <Marker
-            key={marker.id}
-            position={[marker.lat, marker.lng]}
-            icon={icons[marker.type as keyof typeof icons]}
-          >
-            <Popup className="text-slate-900">
-              <div className="font-bold capitalize">{marker.type}</div>
-              <div>Severity: {marker.severity}</div>
-            </Popup>
-          </Marker>
-        ))}
+        {markers.map((marker) => {
+          const iconType = icons[marker.complaint_type as keyof typeof icons] || icons.unclassified;
+          return (
+            <Marker
+              key={marker.complaint_id}
+              position={[marker.latitude, marker.longitude]}
+              icon={iconType}
+            >
+              <Popup className="text-slate-900">
+                <div className="font-bold capitalize">{marker.complaint_type}</div>
+                <div>Severity: {marker.severity}</div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );

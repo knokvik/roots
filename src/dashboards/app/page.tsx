@@ -1,19 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import axios from 'axios';
+import { format } from 'date-fns';
+
 import MetricsBar from "./components/MetricsBar";
 import OfficerConsole from "./components/OfficerConsole";
 import DecayChart from "./components/DecayChart";
+import CitizenView from "./components/CitizenView";
+import EnvironmentalLedger from "./components/EnvironmentalLedger";
+import CityCommand from "./components/CityCommand";
 
-// Dynamically import MapView with ssr disabled for React-Leaflet
 const MapView = dynamic(() => import("./components/MapView"), {
   ssr: false,
-  loading: () => <p className="text-center p-10 text-slate-500">Loading Map...</p>
+  loading: () => <p className="text-center p-10 text-slate-500 animate-pulse bg-slate-900 rounded-lg h-[400px]">Loading Map...</p>
 });
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Officer Console");
+  const [status, setStatus] = useState<"live" | "demo" | "connecting">("connecting");
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isMounted, setIsMounted] = useState(false);
 
   const tabs = [
     "Citizen View",
@@ -21,6 +29,27 @@ export default function Home() {
     "Environmental Ledger",
     "City Command"
   ];
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await axios.get('/api/status');
+        setStatus(res.data.status);
+      } catch (e) {
+        setStatus("demo");
+      }
+      setLastUpdated(new Date());
+    };
+
+    setIsMounted(true);
+    checkStatus();
+    // Refresh every 30 seconds
+    const interval = setInterval(() => {
+      checkStatus();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#050A0E] text-slate-200 p-4 md:p-8 font-space">
@@ -33,8 +62,21 @@ export default function Home() {
             <p className="text-slate-500 text-sm">Responsive Optimization of Urban Infrastructure Through AI</p>
           </div>
           <div className="mt-4 md:mt-0 text-right">
+            <div className="flex items-center justify-end gap-2 mb-1">
+              {status === "live" ? (
+                <span className="flex items-center gap-1 text-[#00E5A0] text-xs font-bold border border-[#00E5A0]/30 bg-[#00E5A0]/10 px-2 py-1 rounded-full">
+                  <span className="w-2 h-2 bg-[#00E5A0] rounded-full animate-pulse"></span> Live
+                </span>
+              ) : status === "demo" ? (
+                <span className="flex items-center gap-1 text-yellow-500 text-xs font-bold border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 rounded-full">
+                  <span className="w-2 h-2 bg-yellow-500 rounded-full"></span> Demo Mode
+                </span>
+              ) : (
+                <span className="text-xs text-slate-500">Connecting...</span>
+              )}
+            </div>
             <p className="text-[#00E5A0] font-bold">Ward 78 - Sadar Bazaar</p>
-            <p className="text-slate-500 text-sm">India Innovates 2026</p>
+            <p className="text-slate-500 text-xs">Updated: {isMounted ? format(lastUpdated, "HH:mm:ss") : ""}</p>
           </div>
         </header>
 
@@ -57,33 +99,44 @@ export default function Home() {
         </nav>
 
         {/* Content Area */}
-        {activeTab === "Officer Console" && (
-          <div className="space-y-8 animate-in fade-in duration-500">
-            <MetricsBar />
+        <div>
+          {activeTab === "Citizen View" && (
+            <div className="animate-in fade-in duration-500">
+              <CitizenView />
+            </div>
+          )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Left Column - Map & Chart */}
-              <div className="flex flex-col gap-8">
-                <MapView />
-                <DecayChart />
-              </div>
+          {activeTab === "Officer Console" && (
+            <div className="space-y-8 animate-in fade-in duration-500">
+              <MetricsBar />
 
-              {/* Right Column - Console */}
-              <div className="flex flex-col h-full">
-                <OfficerConsole />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column - Map & Chart */}
+                <div className="flex flex-col gap-8">
+                  <MapView />
+                  <DecayChart />
+                </div>
+
+                {/* Right Column - Console */}
+                <div className="flex flex-col h-full">
+                  <OfficerConsole />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Placeholder for other tabs */}
-        {activeTab !== "Officer Console" && (
-          <div className="py-20 text-center border border-dashed border-slate-800 rounded-lg text-slate-500 flex flex-col items-center justify-center">
-            <span className="text-4xl mb-4 text-slate-700">🚧</span>
-            <h2 className="text-xl font-bold mb-2">{activeTab}</h2>
-            <p>This module is under development for ROOTS v3.0</p>
-          </div>
-        )}
+          {activeTab === "Environmental Ledger" && (
+            <div className="animate-in fade-in duration-500">
+              <EnvironmentalLedger />
+            </div>
+          )}
+
+          {activeTab === "City Command" && (
+            <div className="animate-in fade-in duration-500">
+              <CityCommand />
+            </div>
+          )}
+        </div>
 
       </div>
     </main>
