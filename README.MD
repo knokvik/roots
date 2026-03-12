@@ -176,18 +176,6 @@ roots/
 
 ---
 
-## 🚀 Build Status (18-Day Plan — Target: 28 March 2026)
-
-| Status | Component |
-|--------|-----------|
-| ✅ Complete | WhatsApp webhook, Gemini Vision pipeline, ST-DBSCAN on PostGIS |
-| ✅ Complete | Causal Graph (waterlogging + AQI), Decay Model (waterlogging) |
-| ✅ Complete | Ward officer dashboard (Next.js + Leaflet), Delhi ward GeoJSON |
-| 🔄 In Progress | Bhashini integration, Surge predictor, Equity Auditor (SHAP) |
-| 📐 Designed | CSR Match Engine, Carbon Credit Ledger, Agentic Council |
-
----
-
 ## 🏆 Competition
 
 **India Innovates 2026**  
