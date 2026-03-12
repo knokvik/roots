@@ -40,7 +40,18 @@ export default function OfficerConsole() {
 
   const handleDispatch = (taskId: string) => {
     console.log(`Dispatched repair team for task: ${taskId}`);
-    alert(`Dispatched repair team for task: ${taskId}`);
+
+    if (confirm(`Are you sure you want to dispatch a team for task: ${taskId}?`)) {
+      // API call to update DB
+      axios.post('/api/repair-tasks/dispatch', { task_id: taskId })
+        .then(() => {
+          // Optimistic UI update
+          setTasks(prev => prev.filter(t => t.task_id !== taskId));
+          alert(`✅ Team dispatched successfully for task ${taskId}`);
+        })
+        .catch(() => alert('Failed to dispatch team.'));
+    }
+
   };
 
   const hasDengueRisk = tasks.some(

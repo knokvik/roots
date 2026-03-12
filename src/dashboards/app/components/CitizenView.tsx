@@ -1,7 +1,9 @@
+
 "use client";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
+import { createClient } from '@/lib/supabase/client';
 
 type Complaint = {
   complaint_id: string;
@@ -43,6 +45,15 @@ export default function CitizenView() {
 
   useEffect(() => {
     fetchData();
+    const supabase = createClient();
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      const channel = supabase.channel('citizen-complaints-live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, (payload) => {
+          fetchData(); // Simplest way to refresh on change
+        })
+        .subscribe();
+      return () => { supabase.removeChannel(channel); };
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +82,7 @@ export default function CitizenView() {
   const statusColor = (status: string) => {
     if (status === 'open') return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50';
     if (status === 'clustered') return 'bg-blue-500/20 text-blue-500 border-blue-500/50';
+    if (status === 'dispatched') return 'bg-purple-500/20 text-purple-400 border-purple-500/50';
     if (status === 'resolved') return 'bg-green-500/20 text-green-500 border-green-500/50';
     return 'bg-slate-500/20 text-slate-500 border-slate-500/50';
   };
@@ -175,14 +187,26 @@ export default function CitizenView() {
           ) : (
              <div className="space-y-3">
                {complaints.slice(0,5).map(c => (
-                 <div key={c.complaint_id} className="bg-[#0A1118] border border-slate-800 p-4 rounded flex justify-between items-center">
-                   <div>
-                     <p className="font-bold capitalize">{c.complaint_type}</p>
-                     <p className="text-xs text-slate-500">{format(new Date(c.timestamp), "PP p")}</p>
+                 <div key={c.complaint_id} className="bg-[#0A1118] border border-slate-800 p-4 rounded flex flex-col">
+                   <div className="flex justify-between items-center mb-2">
+                     <div>
+                       <p className="font-bold capitalize">{c.complaint_type}</p>
+                       <p className="text-xs text-slate-500">{format(new Date(c.timestamp), "PP p")}</p>
+                     </div>
+                     <span className={`text-xs px-2 py-1 rounded border capitalize ${statusColor(c.status)}`}>
+                       {c.status}
+                     </span>
                    </div>
-                   <span className={`text-xs px-2 py-1 rounded border capitalize ${statusColor(c.status)}`}>
-                     {c.status}
-                   </span>
+                   {/* Tracker UI */}
+                   <div className="mt-2 flex items-center justify-between text-xs border-t border-slate-800 pt-3">
+                     <span className={`px-2 py-1 rounded ${['open', 'clustered', 'dispatched', 'resolved'].includes(c.status) ? 'bg-green-900/30 text-green-400' : 'text-slate-500'}`}>Filed ✅</span>
+                     <span className="text-slate-600">→</span>
+                     <span className={`px-2 py-1 rounded ${['clustered', 'dispatched', 'resolved'].includes(c.status) ? 'bg-blue-900/30 text-blue-400' : 'text-slate-500'}`}>Clustered ⏳</span>
+                     <span className="text-slate-600">→</span>
+                     <span className={`px-2 py-1 rounded ${['dispatched', 'resolved'].includes(c.status) ? 'bg-purple-900/30 text-purple-400' : 'text-slate-500'}`}>Dispatched ⏳</span>
+                     <span className="text-slate-600">→</span>
+                     <span className={`px-2 py-1 rounded ${c.status === 'resolved' ? 'bg-green-500/20 text-green-400' : 'text-slate-500'}`}>Resolved ⏳</span>
+                   </div>
                  </div>
                ))}
              </div>
@@ -195,7 +219,6 @@ export default function CitizenView() {
         <div className="bg-[#0A1118] border border-slate-800 rounded-lg p-6 flex flex-col items-center text-center">
           <h3 className="text-lg font-bold mb-6 text-slate-300">Ward 78 Health</h3>
           <div className="relative w-48 h-48 flex items-center justify-center rounded-full border-[8px] border-slate-800">
-             {/* Simple CSS-based circular progress visualization using borders isn't great, let's just do a big number in a circle for now to mimic it */}
              <div
                className="absolute inset-0 rounded-full border-[8px] border-[#00E5A0]"
                style={{ clipPath: `polygon(0 0, 100% 0, 100% 100%, 0 100%)`, opacity: 0.8 }}

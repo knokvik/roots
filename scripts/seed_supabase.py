@@ -130,7 +130,9 @@ def main():
             "root_cause": "Subsurface Drainage Failure",
             "confidence": 0.91,
             "complaint_types": ["waterlogging", "pothole", "damp_wall"],
-            "formed_at": generate_timestamp(base_time, max_offset_hours=120)
+            "formed_at": generate_timestamp(base_time, max_offset_hours=120),
+            "centroid_lat": 28.6562,
+            "centroid_lon": 77.2140
         },
         {
             "cluster_id": "cluster_2",
@@ -138,7 +140,9 @@ def main():
             "root_cause": "Solid Waste Overflow",
             "confidence": 0.87,
             "complaint_types": ["garbage", "mosquito"],
-            "formed_at": generate_timestamp(base_time, max_offset_hours=72)
+            "formed_at": generate_timestamp(base_time, max_offset_hours=72),
+            "centroid_lat": 28.6580,
+            "centroid_lon": 77.2160
         },
         {
             "cluster_id": "cluster_3",
@@ -146,7 +150,9 @@ def main():
             "root_cause": "Surface Drainage Blockage",
             "confidence": 0.85,
             "complaint_types": ["waterlogging", "garbage"],
-            "formed_at": generate_timestamp(base_time, max_offset_hours=336) # Older to trigger critical dengue
+            "formed_at": generate_timestamp(base_time, max_offset_hours=336),
+            "centroid_lat": 28.6550,
+            "centroid_lon": 77.2130
         }
     ]
 
