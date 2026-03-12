@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ROOTS — System Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #050A0E;
+    --bg2: #0A1520;
+    --bg3: #0D1E2E;
+    --accent: #00E5A0;
+    --accent2: #00BFFF;
+    --accent3: #FF6B35;
+    --accent4: #FFD700;
+    --text: #E8F4F8;
+    --muted: #5A7A8A;
+    --border: rgba(0,229,160,0.15);
+    --glow: 0 0 20px rgba(0,229,160,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .header-badge {
+    display: inline-block;
+    background: rgba(0,229,160,0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    padding: 6px 16px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  .header h1 {
+    font-size: clamp(42px, 6vw, 80px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 70%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .header-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .header-tagline {
+    margin-top: 16px;
+    font-size: 17px;
+    color: rgba(232,244,248,0.7);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* THREE COMPONENTS ROW */
+  .components-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr 80px 1fr;
+    gap: 0;
+    margin-bottom: 60px;
+    align-items: stretch;
+  }
+
+  .component-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s ease both;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .component-card:hover {
+    transform: translateY(-4px);
+  }
+  .component-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .component-card.flutter::before { background: linear-gradient(90deg, #54C5F8, #01579B); }
+  .component-card.flutter { border-color: rgba(84,197,248,0.3); animation-delay: 0.1s; }
+  .component-card.flutter:hover { border-color: rgba(84,197,248,0.6); }
+
+  .component-card.server::before { background: linear-gradient(90deg, var(--accent), #00BFFF); }
+  .component-card.server { border-color: rgba(0,229,160,0.3); animation-delay: 0.2s; }
+  .component-card.server:hover { border-color: rgba(0,229,160,0.6); }
+
+  .component-card.react::before { background: linear-gradient(90deg, #61DAFB, #21759B); }
+  .component-card.react { border-color: rgba(97,218,251,0.3); animation-delay: 0.3s; }
+  .component-card.react:hover { border-color: rgba(97,218,251,0.6); }
+
+  .component-icon {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+  .flutter .component-icon { background: rgba(84,197,248,0.15); }
+  .server .component-icon { background: rgba(0,229,160,0.15); }
+  .react .component-icon { background: rgba(97,218,251,0.15); }
+
+  .component-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .flutter .component-label { color: #54C5F8; }
+  .server .component-label { color: var(--accent); }
+  .react .component-label { color: #61DAFB; }
+
+  .component-name {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+
+  .component-desc {
+    font-size: 13px;
+    color: rgba(232,244,248,0.6);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .component-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .stack-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .flutter .stack-tag { border-color: rgba(84,197,248,0.3); color: #54C5F8; background: rgba(84,197,248,0.08); }
+  .server .stack-tag { border-color: rgba(0,229,160,0.3); color: var(--accent); background: rgba(0,229,160,0.08); }
+  .react .stack-tag { border-color: rgba(97,218,251,0.3); color: #61DAFB; background: rgba(97,218,251,0.08); }
+
+  .status-badge {
+    position: absolute;
+    top: 20px; right: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .status-building { background: rgba(255,165,0,0.15); color: #FFA500; border: 1px solid rgba(255,165,0,0.3); }
+  .status-planned { background: rgba(128,128,128,0.15); color: #888; border: 1px solid rgba(128,128,128,0.3); }
+  .status-done { background: rgba(0,229,160,0.15); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+
+  /* ARROW CONNECTORS */
+  .arrow-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .arrow-line {
+    width: 2px;
+    flex: 1;
+    background: linear-gradient(180deg, var(--border), var(--accent), var(--border));
+    max-height: 60px;
+  }
+  .arrow-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .arrow-tip {
+    width: 8px; height: 8px;
+    border-right: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+    transform: rotate(-45deg);
+  }
+
+  /* 7-LAYER ARCHITECTURE */
+  .layers-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 60px;
+  }
+
+  .layer-row {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    animation: fadeLeft 0.5s ease both;
+    transition: background 0.2s, border-color 0.2s;
+    cursor: default;
+  }
+  .layer-row:hover {
+    background: var(--bg3);
+    border-color: rgba(0,229,160,0.3);
+  }
+
+  .layer-row:nth-child(1) { animation-delay: 0.05s; }
+  .layer-row:nth-child(2) { animation-delay: 0.10s; }
+  .layer-row:nth-child(3) { animation-delay: 0.15s; }
+  .layer-row:nth-child(4) { animation-delay: 0.20s; border-color: rgba(0,229,160,0.25); background: rgba(0,229,160,0.04); }
+  .layer-row:nth-child(5) { animation-delay: 0.25s; }
+  .layer-row:nth-child(6) { animation-delay: 0.30s; }
+  .layer-row:nth-child(7) { animation-delay: 0.35s; }
+
+  .layer-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .layer-name {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .layer-desc {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .layer-tech {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .layer-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.2);
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  /* ALGORITHMS GRID */
+  .algo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 60px;
+  }
+
+  .algo-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    animation: fadeUp 0.5s ease both;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .algo-card:hover { border-color: rgba(0,229,160,0.4); }
+  .algo-card::after {
+    content: attr(data-num);
+    position: absolute;
+    right: 20px; top: 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 48px;
+    font-weight: 700;
+    color: rgba(0,229,160,0.05);
+    line-height: 1;
+  }
+  .algo-card:nth-child(1) { animation-delay: 0.1s; }
+  .algo-card:nth-child(2) { animation-delay: 0.2s; }
+  .algo-card:nth-child(3) { animation-delay: 0.3s; }
+  .algo-card:nth-child(4) { animation-delay: 0.4s; }
+
+  .algo-type {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .algo-type::before {
+    content: '◆';
+    font-size: 7px;
+  }
+  .algo-name {
+    font-size: 17px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+  }
+  .algo-desc {
+    font-size: 12px;
+    color: rgba(232,244,248,0.6);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .algo-formula {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    background: rgba(0,0,0,0.4);
+    border-left: 2px solid var(--accent);
+    padding: 8px 12px;
+    color: var(--accent);
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 10px;
+    word-break: break-all;
+  }
+  .algo-ref {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  /* DATA FLOW */
+  .data-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 60px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .flow-step {
+    flex-shrink: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    text-align: center;
+    min-width: 120px;
+    animation: fadeUp 0.5s ease both;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .flow-step:hover {
+    border-color: rgba(0,229,160,0.5);
+    transform: translateY(-3px);
+  }
+  .flow-step:nth-child(1) { animation-delay: 0.0s; }
+  .flow-step:nth-child(3) { animation-delay: 0.1s; }
+  .flow-step:nth-child(5) { animation-delay: 0.2s; }
+  .flow-step:nth-child(7) { animation-delay: 0.3s; }
+  .flow-step:nth-child(9) { animation-delay: 0.4s; }
+  .flow-step:nth-child(11) { animation-delay: 0.5s; }
+
+  .flow-icon { font-size: 20px; margin-bottom: 6px; }
+  .flow-label {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .flow-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  .flow-arrow {
+    flex-shrink: 0;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .flow-arrow::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--border), var(--accent));
+    position: relative;
+  }
+  .flow-arrow svg {
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* 6 DOMAINS */
+  .domains-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 60px;
+  }
+
+  .domain-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    animation: fadeUp 0.5s ease both;
+    transition: all 0.2s;
+  }
+  .domain-card:hover {
+    background: var(--bg3);
+    border-color: rgba(0,229,160,0.35);
+    transform: translateY(-2px);
+  }
+  .domain-card:nth-child(1) { animation-delay: 0.05s; }
+  .domain-card:nth-child(2) { animation-delay: 0.10s; }
+  .domain-card:nth-child(3) { animation-delay: 0.15s; }
+  .domain-card:nth-child(4) { animation-delay: 0.20s; }
+  .domain-card:nth-child(5) { animation-delay: 0.25s; }
+  .domain-card:nth-child(6) { animation-delay: 0.30s; }
+
+  .domain-emoji { font-size: 28px; margin-bottom: 10px; }
+  .domain-name {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .domain-stat {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .domain-output {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* IMPACT METRICS */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 60px;
+  }
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 20px;
+    text-align: center;
+    animation: fadeUp 0.5s ease both;
+    transition: all 0.2s;
+  }
+  .metric-card:hover {
+    border-color: rgba(0,229,160,0.4);
+    transform: translateY(-3px);
+    box-shadow: var(--glow);
+  }
+  .metric-card:nth-child(1) { animation-delay: 0.1s; }
+  .metric-card:nth-child(2) { animation-delay: 0.2s; }
+  .metric-card:nth-child(3) { animation-delay: 0.3s; }
+  .metric-card:nth-child(4) { animation-delay: 0.4s; }
+
+  .metric-value {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .metric-label {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 40px 0 20px;
+    border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Pulse dot */
+  .pulse-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 8px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* Horizontal divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 48px 0;
+  }
+
+  .highlight-box {
+    background: rgba(0,229,160,0.05);
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .highlight-box-text {
+    font-size: 14px;
+    color: rgba(232,244,248,0.8);
+    line-height: 1.5;
+  }
+  .highlight-box-text strong { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge">🇮🇳 India Innovates 2026 · Urban Solutions · Smart Cities</div>
+    <h1>ROOTS</h1>
+    <div class="header-sub">Responsive Optimization of Urban Infrastructure Through AI · v3.0</div>
+    <div class="header-tagline">A seven-layer urban intelligence operating system that converts citizen complaints into infrastructure root-cause analysis</div>
+  </div>
+
+  <!-- IMPACT METRICS -->
+  <div class="section-title"><span class="pulse-dot"></span>Projected Impact — Ward 78, Sadar Bazaar, Delhi</div>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-value">71%</div>
+      <div class="metric-label">Reduction in repeat complaints by resolving root causes</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">&lt;7d</div>
+      <div class="metric-label">Target resolution time vs. current 30+ day average</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">12d</div>
+      <div class="metric-label">Advance dengue outbreak warning before hospital data</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">60%</div>
+      <div class="metric-label">Reduction in annual environmental health cost ₹2.3Cr</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- THREE COMPONENTS -->
+  <div class="section-title">System Components — Full Stack Architecture</div>
+
+  <div class="highlight-box">
+    <div style="font-size:24px; flex-shrink:0;">⚡</div>
+    <div class="highlight-box-text">
+      ROOTS is a <strong>three-component system</strong>: a citizen-facing Flutter mobile app, a Python FastAPI intelligence server, and a React.js officer/policy dashboard — all communicating through a shared REST API and Neo4j knowledge graph.
+    </div>
+  </div>
+
+  <div class="components-row">
+
+    <!-- FLUTTER -->
+    <div class="component-card flutter">
+      <span class="status-badge status-planned">Planned</span>
+      <div class="component-icon">📱</div>
+      <div class="component-label">Component 01 · Citizens</div>
+      <div class="component-name">Flutter App</div>
+      <div class="component-desc">Mobile-first citizen complaint interface serving all 13M Delhi residents. Works offline, supports 22 Indian languages, accessible on any Android device.</div>
+      <div class="component-stack">
+        <span class="stack-tag">Flutter 3.x</span>
+        <span class="stack-tag">Dart</span>
+        <span class="stack-tag">Bhashini API</span>
+        <span class="stack-tag">WhatsApp SDK</span>
+        <span class="stack-tag">USSD</span>
+        <span class="stack-tag">DigiLocker</span>
+        <span class="stack-tag">UMANG</span>
+      </div>
+    </div>
+
+    <!-- ARROW 1 -->
+    <div class="arrow-connector">
+      <div class="arrow-line"></div>
+      <div class="arrow-label">REST API</div>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M6 12L0 0h12L6 12z" fill="rgba(0,229,160,0.6)"/>
+      </svg>
+    </div>
+
+    <!-- PYTHON SERVER -->
+    <div class="component-card server">
+      <span class="status-badge status-building">Building Now</span>
+      <div class="component-icon">🧠</div>
+      <div class="component-label">Component 02 · Intelligence Core</div>
+      <div class="component-name">Python FastAPI Server</div>
+      <div class="component-desc">The AI brain of ROOTS. Runs all 7 algorithms, maintains the causal knowledge graph, computes environmental decay costs, and optimises repair priorities.</div>
+      <div class="component-stack">
+        <span class="stack-tag">FastAPI</span>
+        <span class="stack-tag">PostgreSQL+PostGIS</span>
+        <span class="stack-tag">Neo4j</span>
+        <span class="stack-tag">Gemini Vision</span>
+        <span class="stack-tag">LangGraph</span>
+        <span class="stack-tag">XGBoost</span>
+        <span class="stack-tag">SARIMA</span>
+        <span class="stack-tag">Railway.app</span>
+      </div>
+    </div>
+
+    <!-- ARROW 2 -->
+    <div class="arrow-connector">
+      <div class="arrow-line"></div>
+      <div class="arrow-label">REST API</div>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M6 12L0 0h12L6 12z" fill="rgba(0,229,160,0.6)"/>
+      </svg>
+    </div>
+
+    <!-- REACT DASHBOARD -->
+    <div class="component-card react">
+      <span class="status-badge status-planned">Planned</span>
+      <div class="component-icon">🖥️</div>
+      <div class="component-label">Component 03 · Officers & Policy</div>
+      <div class="component-name">React Dashboard</div>
+      <div class="component-desc">Four role-specific dashboards for ward officers, policy makers, NGOs, and city command. Real-time ward maps, repair queues, dengue forecasts, and equity audits.</div>
+      <div class="component-stack">
+        <span class="stack-tag">Next.js 14</span>
+        <span class="stack-tag">Leaflet.js</span>
+        <span class="stack-tag">TypeScript</span>
+        <span class="stack-tag">Delhi GeoJSON</span>
+        <span class="stack-tag">Recharts</span>
+        <span class="stack-tag">Tailwind CSS</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 7 LAYERS -->
+  <div class="section-title">Seven-Layer Architecture</div>
+  <div class="layers-grid">
+
+    <div class="layer-row">
+      <div>
+        <div class="layer-num">LAYER 01</div>
+      </div>
+      <div>
+        <div class="layer-name">Citizen Input</div>
+        <div class="layer-desc">Five intake channels covering every connectivity profile in India — smartphone to feature phone</div>
+      </div>
+      <div class="layer-tech">
+        <span class="layer-tag">WhatsApp API</span>
+        <span class="layer-tag">PWA</span>
+        <span class="layer-tag">USSD *123#</span>
+        <span class="layer-tag">IVR</span>
+        <span class="layer-tag">UMANG</span>
+      </div>
+    </div>
+
+    <div class="layer-row">
+      <div>
+        <div class="layer-num">LAYER 02</div>
+      </div>
+      <div>
+        <div class="layer-name">Bhashini Language & Identity Layer <span style="font-size:10px;color:var(--accent3);margin-left:6px;">NEW v3.0</span></div>
+        <div class="layer-desc">All 22 constitutionally scheduled Indian languages · ULB Adapter for messy legacy data · DigiLocker verification</div>
+      </div>
+      <div class="layer-tech">
+        <span class="layer-tag">Bhashini API</span>
+        <span class="layer-tag">ETL Pipeline</span>
+        <span class="layer-tag">DigiLocker</span>
+        <span class="layer-tag">Neo4j ETL</span>
+      </div>
+    </div>
+
+    <div class="layer-row">
+      <div>
+        <div class="layer-num">LAYER 03</div>
+      </div>
+      <div>
+        <div class="layer-name">Vision & Geo-Enrichment</div>
+        <div class="layer-desc">Gemini Vision classifies complaint type and severity · PostGIS spatial join to ward boundaries · NLP urgency extraction</div>
+      </div>
+      <div class="layer-tech">
+        <span class="layer-tag">Gemini 1.5 Flash</span>
+        <span class="layer-tag">PostGIS</span>
+        <span class="layer-tag">NLP</span>
+      </div>
+    </div>
+
+    <div class="layer-row">
+      <div>
+        <div class="layer-num">LAYER 04</div>
+      </div>
+      <div>
+        <div class="layer-name">⚡ Intelligence Core — 4 Novel Algorithms</div>
+        <div class="layer-desc">ST-DBSCAN clustering → Causal Graph diagnosis → Environmental Decay costing → ROI Budget Optimization</div>
+      </div>
+      <div class="layer-tech">
+        <span class="layer-tag">ST-DBSCAN</span>
+        <span class="layer-tag">Causal Graph</span>
+        <span class="layer-tag">Decay Model</span>
+        <span class="layer-tag">ROI Optimizer</span>
+        <span class="layer-tag">LangGraph</span>
+      </div>
+    </div>
+
+    <div class="layer-row">
+      <div>
+        <div class="layer-num">LAYER 05</div>
+      </div>
+      <div>
+        <div class="layer-name">Civic Digital Twin <span style="font-size:10px;color:var(--accent3);margin-left:6px;">NEW v3.0</span></div>
+        <div class="layer-desc">Live condition model of Ward 78 infrastructure — every drain, road, green space has a real-time health score</div>
+      </div>
+      <div class="layer-tech">
+        <span class="layer-tag">Neo4j Graph</span>
+        <span class="layer-tag">PostGIS</span>
+        <span class="layer-tag">Time Series</span>
+      </div>
+    </div>
+
+    <div class="layer-row">
+      <div>
+        <div class="layer-num">LAYER 06</div>
+      </div>
+      <div>
+        <div class="layer-name">CSR & Carbon Credit Bridge <span style="font-size:10px;color:var(--accent3);margin-left:6px;">NEW v3.0</span></div>
+        <div class="layer-desc">CSR Match Engine (India Companies Act 2013, ₹26,000Cr annual pool) + Carbon Credit Ledger on BEE exchange</div>
+      </div>
+      <div class="layer-tech">
+        <span class="layer-tag">CSR Engine</span>
+        <span class="layer-tag">Carbon Credits</span>
+        <span class="layer-tag">ESG Reports</span>
+      </div>
+    </div>
+
+    <div class="layer-row">
+      <div>
+        <div class="layer-num">LAYER 07</div>
+      </div>
+      <div>
+        <div class="layer-name">Output Dashboards — 4 Role-Based Interfaces</div>
+        <div class="layer-desc">Citizen View · Officer Console · Environmental Ledger · City Command — each presenting the same intelligence differently</div>
+      </div>
+      <div class="layer-tech">
+        <span class="layer-tag">Next.js 14</span>
+        <span class="layer-tag">Leaflet.js</span>
+        <span class="layer-tag">Real-time</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- DATA FLOW -->
+  <div class="section-title">Core Data Flow</div>
+  <div class="data-flow">
+    <div class="flow-step">
+      <div class="flow-icon">📝</div>
+      <div class="flow-label">Complaint</div>
+      <div class="flow-sub">5 channels</div>
+    </div>
+    <div class="flow-arrow"><svg width="32" height="12" viewBox="0 0 32 12"><path d="M0 6h28M22 1l8 5-8 5" stroke="rgba(0,229,160,0.6)" stroke-width="1.5" fill="none"/></svg></div>
+    <div class="flow-step">
+      <div class="flow-icon">🌐</div>
+      <div class="flow-label">Bhashini</div>
+      <div class="flow-sub">22 languages</div>
+    </div>
+    <div class="flow-arrow"><svg width="32" height="12" viewBox="0 0 32 12"><path d="M0 6h28M22 1l8 5-8 5" stroke="rgba(0,229,160,0.6)" stroke-width="1.5" fill="none"/></svg></div>
+    <div class="flow-step">
+      <div class="flow-icon">👁️</div>
+      <div class="flow-label">Gemini Vision</div>
+      <div class="flow-sub">Classify + GPS</div>
+    </div>
+    <div class="flow-arrow"><svg width="32" height="12" viewBox="0 0 32 12"><path d="M0 6h28M22 1l8 5-8 5" stroke="rgba(0,229,160,0.6)" stroke-width="1.5" fill="none"/></svg></div>
+    <div class="flow-step">
+      <div class="flow-icon">🔵</div>
+      <div class="flow-label">ST-DBSCAN</div>
+      <div class="flow-sub">Cluster</div>
+    </div>
+    <div class="flow-arrow"><svg width="32" height="12" viewBox="0 0 32 12"><path d="M0 6h28M22 1l8 5-8 5" stroke="rgba(0,229,160,0.6)" stroke-width="1.5" fill="none"/></svg></div>
+    <div class="flow-step">
+      <div class="flow-icon">🕸️</div>
+      <div class="flow-label">Causal Graph</div>
+      <div class="flow-sub">Root cause</div>
+    </div>
+    <div class="flow-arrow"><svg width="32" height="12" viewBox="0 0 32 12"><path d="M0 6h28M22 1l8 5-8 5" stroke="rgba(0,229,160,0.6)" stroke-width="1.5" fill="none"/></svg></div>
+    <div class="flow-step">
+      <div class="flow-icon">📉</div>
+      <div class="flow-label">Decay Model</div>
+      <div class="flow-sub">₹ Cost</div>
+    </div>
+    <div class="flow-arrow"><svg width="32" height="12" viewBox="0 0 32 12"><path d="M0 6h28M22 1l8 5-8 5" stroke="rgba(0,229,160,0.6)" stroke-width="1.5" fill="none"/></svg></div>
+    <div class="flow-step">
+      <div class="flow-icon">🎯</div>
+      <div class="flow-label">ROI Optimizer</div>
+      <div class="flow-sub">Rank repairs</div>
+    </div>
+    <div class="flow-arrow"><svg width="32" height="12" viewBox="0 0 32 12"><path d="M0 6h28M22 1l8 5-8 5" stroke="rgba(0,229,160,0.6)" stroke-width="1.5" fill="none"/></svg></div>
+    <div class="flow-step">
+      <div class="flow-icon">📊</div>
+      <div class="flow-label">Dashboard</div>
+      <div class="flow-sub">4 interfaces</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 4 ALGORITHMS -->
+  <div class="section-title">Four Novel Algorithms</div>
+  <div class="algo-grid">
+
+    <div class="algo-card" data-num="01">
+      <div class="algo-type">Novel Contribution 01</div>
+      <div class="algo-name">ST-DBSCAN Adaptive Clustering</div>
+      <div class="algo-desc">Extends Birant-Kut ST-DBSCAN with dynamic spatial radius ε calibrated by Census 2021 population density class — collapses to 200m at max density, expands to 800m at min density.</div>
+      <div class="algo-formula">ε(density_class) = {1:800m, 2:600m, 3:400m, 4:300m, 5:200m}<br/>T_window = 72h · MinPts = 3</div>
+      <div class="algo-ref">Birant & Kut (2007) · Data & Knowledge Engineering 60(1)</div>
+    </div>
+
+    <div class="algo-card" data-num="02">
+      <div class="algo-type">Novel Contribution 02</div>
+      <div class="algo-name">Causal Inference Graph Engine</div>
+      <div class="algo-desc">Bayesian knowledge graph of 8 infrastructure failure signatures. Each cluster is scored against all signatures — officer dispatch only when confidence exceeds 84% threshold.</div>
+      <div class="algo-formula">8 signatures · Confidence threshold > 0.84<br/>Below threshold → "unclassified" → manual review</div>
+      <div class="algo-ref">Applied to civic data — novel implementation · Neo4j Cypher</div>
+    </div>
+
+    <div class="algo-card" data-num="03">
+      <div class="algo-type">Novel Contribution 03</div>
+      <div class="algo-name">Environmental Decay Cost Model</div>
+      <div class="algo-desc">Converts unresolved complaints into real-time financial liability. Infrastructure damage cost grows exponentially — dengue risk escalates after day 7 (Aedes aegypti larval cycle).</div>
+      <div class="algo-formula">C(t) = [C_repair × e^(λt)] + Σ(αᵢ × Hᵢ(t) × P_density)<br/>λ=0.08 waterlogging · dengue critical day 14+</div>
+      <div class="algo-ref">Infrastructure decay literature · NDMC + IMD + CPCB public data</div>
+    </div>
+
+    <div class="algo-card" data-num="04">
+      <div class="algo-type">Novel Contribution 04</div>
+      <div class="algo-name">Environmental ROI Budget Optimizer</div>
+      <div class="algo-desc">Replaces complaint-volume prioritisation with environmental return on investment. Greedy 0/1 knapsack approximation — within 15% of optimal, O(n log n) time.</div>
+      <div class="algo-formula">Maximise: Σ(env_harm_prevented × xᵢ)<br/>Subject to: Σ(cost × xᵢ) ≤ Budget B</div>
+      <div class="algo-ref">0/1 Knapsack · Greedy approximation · O(n log n)</div>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 6 DOMAINS -->
+  <div class="section-title">Six Problem Domains</div>
+  <div class="domains-grid">
+    <div class="domain-card">
+      <div class="domain-emoji">🌊</div>
+      <div class="domain-name">Urban Flooding</div>
+      <div class="domain-stat">2,500+ hotspots · ₹500Cr damage</div>
+      <div class="domain-output">72-hour ward flood risk heatmap with drainage failure root cause identification</div>
+    </div>
+    <div class="domain-card">
+      <div class="domain-emoji">💨</div>
+      <div class="domain-name">Air Quality</div>
+      <div class="domain-stat">40 CPCB stations · AQI varies 4x</div>
+      <div class="domain-output">Hyper-local PM2.5 per ward · complaint-correlated AQI forecast</div>
+    </div>
+    <div class="domain-card">
+      <div class="domain-emoji">🗑️</div>
+      <div class="domain-name">Waste Management</div>
+      <div class="domain-stat">₹1,200Cr budget · 40% inefficient</div>
+      <div class="domain-output">Dynamic route optimisation · overflow prediction 24 hours ahead</div>
+    </div>
+    <div class="domain-card">
+      <div class="domain-emoji">🚑</div>
+      <div class="domain-name">Traffic & Emergency</div>
+      <div class="domain-stat">Avg. ambulance 18min vs 8min target</div>
+      <div class="domain-output">AI emergency corridor with signal-timing recommendation during incidents</div>
+    </div>
+    <div class="domain-card">
+      <div class="domain-emoji">🦟</div>
+      <div class="domain-name">Public Health</div>
+      <div class="domain-stat">Dengue peaks 2–5mo post-monsoon</div>
+      <div class="domain-output">12-day outbreak prediction · pre-emptive fogging dispatch</div>
+    </div>
+    <div class="domain-card">
+      <div class="domain-emoji">🏗️</div>
+      <div class="domain-name">Infrastructure Decay</div>
+      <div class="domain-stat">6-year avg. inspection gap</div>
+      <div class="domain-output">Predictive maintenance calendar ranked by ROI · 90-day failure forecast</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    ROOTS v3.0 · India Innovates 2026 · Urban Solutions · Bharat Mandapam, New Delhi · 28 March 2026<br/>
+    <span style="color: rgba(90,122,138,0.5); display:block; margin-top:6px;">Developed by Niraj Naphade · github.com/knokvik · Pune, Maharashtra</span>
+  </div>
+
+</div>
+</body>
+</html>
